@@ -1,0 +1,30 @@
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Backend (Java/Maven/Spring Boot)
+backend/target/
+backend/*.iml
+backend/log/
+backend/logs/
+.idea/
+*.class
+*.log
+
+# Frontend (Node/Vue)
+frontend/node_modules/
+frontend/dist/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.eslintcache
+.env.local
+.env.*.local
+
+# Redis
+Redis/dump.rdb
