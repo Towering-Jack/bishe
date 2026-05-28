@@ -13,6 +13,8 @@ baidu:
 
 
 spring:
+  main:
+    allow-circular-references: true
   servlet:
     multipart:
       enabled: true
@@ -22,7 +24,7 @@ spring:
   datasource:
     dynamic:
       # 是否开启 SQL日志输出，生产环境建议关闭，有性能损耗
-      p6spy: true
+      p6spy: false
       hikari:
         connection-timeout: 30000
         max-lifetime: 1800000
@@ -36,9 +38,9 @@ spring:
         # 数据源-1，名称为 primary
         primary:
           username: root
-          password: 123456
+          password: DzKmzDatzZFNBFEP
           driver-class-name: com.mysql.cj.jdbc.Driver
-          url: jdbc:mysql://127.0.0.1:3306/property_cos?useUnicode=true&characterEncoding=UTF-8&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=Asia/Shanghai
+          url: jdbc:mysql://1.14.170.236:13306/property_cos?useUnicode=true&characterEncoding=UTF-8&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=Asia/Shanghai
 
   aop:
     proxy-target-class: true
@@ -51,9 +53,9 @@ spring:
     time-zone: GMT+8
 
   redis:
-    host: 127.0.0.1
-    port: 6379
-    password: 
+    host: 1.14.170.236
+    port: 26739
+    password: p7GxPL5PsMFXtP6T
     jedis:
       pool:
         min-idle: 8
@@ -81,6 +83,28 @@ management:
         include: ['httptrace', 'metrics']
 
 
+  quartz:
+    job-store-type: jdbc
+    properties:
+      org:
+        quartz:
+          scheduler:
+            instanceName: MyScheduler
+            instanceId: AUTO
+          threadPool:
+            class: org.quartz.simpl.SimpleThreadPool
+            threadCount: 20
+            threadPriority: 5
+          jobStore:
+            class: org.quartz.impl.jdbcjobstore.JobStoreTX
+            driverDelegateClass: org.quartz.impl.jdbcjobstore.StdJDBCDelegate
+            tablePrefix: QRTZ_
+            isClustered: true
+            clusterCheckinInterval: 15000
+            maxMisfiresToHandleAtATime: 1
+            misfireThreshold: 12000
+            useProperties: false
+
 febs:
   # 是否异步记录用户操作日志
   openAopLog: true
@@ -94,3 +118,9 @@ febs:
     anonUrl: /login,/logout/**,/regist,/user/check/**,/file/**,/imagesWeb/**,/cos/payment-manage/ali/**,/cos/face/**
     # token有效期，单位秒
     jwtTimeOut: 3600
+
+minio:
+  endpoint: http://1.14.170.236:19000
+  access-key: bERJuw9csaSUsTgHRA1D
+  secret-key: BYP5IQC9K4soCD4BUPFtozdb0M7zfbSB22r8w3if
+  bucket-name: property-cos

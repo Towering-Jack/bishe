@@ -1,8 +1,8 @@
 package cc.mrbird.febs.common.utils;
 
-
 import javax.crypto.Cipher;
-import java.security.Key;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import java.security.Security;
 
 public class EncryptUtil {
@@ -47,8 +47,10 @@ public class EncryptUtil {
     }
 
     EncryptUtil(String strKey) throws Exception {
-        Security.addProvider(new com.sun.crypto.provider.SunJCE());
-        Key key = getKey(strKey.getBytes());
+        // 移除对 com.sun.crypto.provider.SunJCE() 的依赖
+        // Security.addProvider(new com.sun.crypto.provider.SunJCE());
+
+        SecretKey key = getKey(strKey.getBytes());
 
         encryptCipher = Cipher.getInstance("DES");
         encryptCipher.init(Cipher.ENCRYPT_MODE, key);
@@ -77,11 +79,11 @@ public class EncryptUtil {
         }
     }
 
-    private Key getKey(byte[] arrBTmp) {
+    private SecretKey getKey(byte[] arrBTmp) {
         byte[] arrB = new byte[8];
         for (int i = 0; i < arrBTmp.length && i < arrB.length; i++) {
             arrB[i] = arrBTmp[i];
         }
-        return new javax.crypto.spec.SecretKeySpec(arrB, "DES");
+        return new SecretKeySpec(arrB, "DES");
     }
 }

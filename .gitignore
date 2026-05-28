@@ -1,4 +1,6 @@
-# OS generated files
+# ================================================
+# OS Generated Files
+# ================================================
 .DS_Store
 .DS_Store?
 ._*
@@ -7,24 +9,86 @@
 ehthumbs.db
 Thumbs.db
 
-# Backend (Java/Maven/Spring Boot)
+# ================================================
+# Backend - Java/Maven/Spring Boot
+# ================================================
+# Maven构建输出
 backend/target/
+backend/*/target/
+
+# IDE配置
+backend/.idea/
+backend/.vscode/
 backend/*.iml
+backend/*.ipr
+backend/*.iws
+
+# 日志文件
 backend/log/
 backend/logs/
-.idea/
-*.class
 *.log
+*.log.*
 
-# Frontend (Node/Vue)
+# 编译输出
+*.class
+*.war
+*.ear
+
+# ================================================
+# Frontend - Node/Vue
+# ================================================
+# 依赖
 frontend/node_modules/
-frontend/dist/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.eslintcache
-.env.local
-.env.*.local
+frontend/*/node_modules/
 
+# 构建输出
+frontend/dist/
+frontend/dist-ssr/
+
+# 日志
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/pnpm-debug.log*
+
+# 本地环境配置
+frontend/.env.local
+frontend/.env.*.local
+frontend/.env.development
+frontend/.env.production
+
+# 缓存
+frontend/.eslintcache
+frontend/.stylelintcache
+frontend/.cache/
+
+# ================================================
+# Database - 上传文件
+# ================================================
+# 用户上传的图片文件
+/db/*.jpg
+/db/*.jpeg
+/db/*.png
+/db/*.gif
+/db/*.bmp
+/db/*.webp
+/db/*.html
+
+# 保留SQL文件
+!/db/*.sql
+
+# ================================================
 # Redis
+# ================================================
 Redis/dump.rdb
+Redis/*.rdb
+Redis/appendonly.aof
+
+# ================================================
+# Others
+# ================================================
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
