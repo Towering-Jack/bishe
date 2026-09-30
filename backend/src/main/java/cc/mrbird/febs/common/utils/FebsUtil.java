@@ -2,6 +2,7 @@ package cc.mrbird.febs.common.utils;
 
 import cc.mrbird.febs.common.authentication.JWTUtil;
 import cc.mrbird.febs.common.domain.FebsConstant;
+import cc.mrbird.febs.common.exception.CacheMissException;
 import cc.mrbird.febs.common.function.CacheSelector;
 import cc.mrbird.febs.common.service.CacheService;
 import cc.mrbird.febs.system.domain.User;
@@ -38,8 +39,14 @@ public class FebsUtil {
             } else {
                 return t;
             }
+        } catch (CacheMissException e) {
+            // 正常的「缓存未命中」：随后回退查数据库即可，不是故障。
+            // 之前这里用 Exception 统一表示未命中，却被当成错误打成 ERROR 日志，
+            // 把真正的问题淹没了。
+            log.debug("cache miss, fallback to database ······");
+            return databaseSelector.get();
         } catch (Exception e) {
-            // 缓存查询出错，则去数据库查询
+            // 缓存查询出错（例如 Redis 连不上），同样回退数据库，但要留下错误日志
             log.error("redis error：", e);
             log.debug("query data from database ······");
             return databaseSelector.get();

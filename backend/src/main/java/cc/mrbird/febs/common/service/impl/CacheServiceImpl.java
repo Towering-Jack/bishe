@@ -1,6 +1,7 @@
 package cc.mrbird.febs.common.service.impl;
 
 import cc.mrbird.febs.common.domain.FebsConstant;
+import cc.mrbird.febs.common.exception.CacheMissException;
 import cc.mrbird.febs.common.service.CacheService;
 import cc.mrbird.febs.common.service.RedisService;
 import cc.mrbird.febs.system.dao.UserMapper;
@@ -53,7 +54,7 @@ public class CacheServiceImpl implements CacheService {
     public User getUser(String username) throws Exception {
         String userString = this.redisService.get(FebsConstant.USER_CACHE_PREFIX + username);
         if (StringUtils.isBlank(userString))
-            throw new Exception();
+            throw new CacheMissException();
         else
             return this.mapper.readValue(userString, User.class);
     }
@@ -62,7 +63,7 @@ public class CacheServiceImpl implements CacheService {
     public List<Role> getRoles(String username) throws Exception {
         String roleListString = this.redisService.get(FebsConstant.USER_ROLE_CACHE_PREFIX + username);
         if (StringUtils.isBlank(roleListString)) {
-            throw new Exception();
+            throw new CacheMissException();
         } else {
             JavaType type = mapper.getTypeFactory().constructParametricType(List.class, Role.class);
             return this.mapper.readValue(roleListString, type);
@@ -73,7 +74,7 @@ public class CacheServiceImpl implements CacheService {
     public List<Menu> getPermissions(String username) throws Exception {
         String permissionListString = this.redisService.get(FebsConstant.USER_PERMISSION_CACHE_PREFIX + username);
         if (StringUtils.isBlank(permissionListString)) {
-            throw new Exception();
+            throw new CacheMissException();
         } else {
             JavaType type = mapper.getTypeFactory().constructParametricType(List.class, Menu.class);
             return this.mapper.readValue(permissionListString, type);
@@ -84,7 +85,7 @@ public class CacheServiceImpl implements CacheService {
     public UserConfig getUserConfig(String userId) throws Exception {
         String userConfigString = this.redisService.get(FebsConstant.USER_CONFIG_CACHE_PREFIX + userId);
         if (StringUtils.isBlank(userConfigString))
-            throw new Exception();
+            throw new CacheMissException();
         else
             return this.mapper.readValue(userConfigString, UserConfig.class);
     }
