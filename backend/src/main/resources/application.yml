@@ -38,9 +38,9 @@ spring:
         # 数据源-1，名称为 primary
         primary:
           username: root
-          password: DzKmzDatzZFNBFEP
+          password: sAWwSwCCJf534iK8
           driver-class-name: com.mysql.cj.jdbc.Driver
-          url: jdbc:mysql://1.14.170.236:13306/property_cos?useUnicode=true&characterEncoding=UTF-8&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=Asia/Shanghai
+          url: jdbc:mysql://129.204.58.109:13306/property_cos?useUnicode=true&characterEncoding=UTF-8&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=Asia/Shanghai
 
   aop:
     proxy-target-class: true
@@ -53,9 +53,9 @@ spring:
     time-zone: GMT+8
 
   redis:
-    host: 1.14.170.236
+    host: 129.204.58.109
     port: 26739
-    password: p7GxPL5PsMFXtP6T
+    password: NkZzjGt6G4GzjjPz
     jedis:
       pool:
         min-idle: 8
@@ -83,27 +83,35 @@ management:
         include: ['httptrace', 'metrics']
 
 
-  quartz:
-    job-store-type: jdbc
-    properties:
-      org:
-        quartz:
-          scheduler:
-            instanceName: MyScheduler
-            instanceId: AUTO
-          threadPool:
-            class: org.quartz.simpl.SimpleThreadPool
-            threadCount: 20
-            threadPriority: 5
-          jobStore:
-            class: org.quartz.impl.jdbcjobstore.JobStoreTX
-            driverDelegateClass: org.quartz.impl.jdbcjobstore.StdJDBCDelegate
-            tablePrefix: QRTZ_
-            isClustered: true
-            clusterCheckinInterval: 15000
-            maxMisfiresToHandleAtATime: 1
-            misfireThreshold: 12000
-            useProperties: false
+# 定时任务（Quartz）
+# 注意：这一段必须是顶格的（与 spring: / management: 同级）。
+# 之前它被缩进在 management: 下面，实际变成了 management.quartz.*，
+# 而 Spring Boot 只认根级的 quartz.*，导致 job-store-type / isClustered
+# 全部没有生效（启动日志里会显示 Scheduler MyScheduler_$_NON_CLUSTERED started）。
+quartz:
+  # 任务持久化到数据库（QRTZ_* 表），重启后任务不丢失
+  job-store-type: jdbc
+  properties:
+    org:
+      quartz:
+        scheduler:
+          instanceName: MyScheduler
+          instanceId: AUTO
+        threadPool:
+          class: org.quartz.simpl.SimpleThreadPool
+          threadCount: 20
+          threadPriority: 5
+        jobStore:
+          class: org.quartz.impl.jdbcjobstore.JobStoreTX
+          driverDelegateClass: org.quartz.impl.jdbcjobstore.StdJDBCDelegate
+          tablePrefix: QRTZ_
+          # 单机部署时 isClustered 留 false 更合适；多实例共用同一套 QRTZ_ 表才需要 true。
+          # 这里保持你原来的值不变，只修正缩进。
+          isClustered: true
+          clusterCheckinInterval: 15000
+          maxMisfiresToHandleAtATime: 1
+          misfireThreshold: 12000
+          useProperties: false
 
 febs:
   # 是否异步记录用户操作日志
@@ -120,7 +128,7 @@ febs:
     jwtTimeOut: 3600
 
 minio:
-  endpoint: http://1.14.170.236:19000
-  access-key: bERJuw9csaSUsTgHRA1D
-  secret-key: BYP5IQC9K4soCD4BUPFtozdb0M7zfbSB22r8w3if
+  endpoint: http://129.204.58.109:19000
+  access-key: 69GPCAw3dsdbfmJlpw2C
+  secret-key: 26LpEUQyZyfKpTbveqJyrDJ2Wqyty45aB0hsuzqf
   bucket-name: property-cos
