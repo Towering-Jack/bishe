@@ -119,7 +119,10 @@ if (config.build.productionGzip) {
       algorithm: 'gzip',
       test: /\.(js|css)$/,
       threshold: 10240,
-      minRatio: 0.8
+      minRatio: 0.8,
+      // static/app-config.js 是给部署的人直接编辑的，不生成 .gz，
+      // 免得改错文件（改了源文件却因为 nginx 发 .gz 而不生效）。
+      exclude: /app-config\.js$/
     })
   )
 }
