@@ -39,7 +39,7 @@
         <a-col :span="24">
           <a-upload
             name="avatar"
-            action="http://127.0.0.1:9527/file/fileUpload/"
+            :action="`${apiBase}/file/fileUpload/`"
             list-type="picture-card"
             disabled
             :file-list="fileList"
@@ -87,7 +87,7 @@
         <a-col :span="8"><b>员工姓名：</b>
           <a-popover>
             <template slot="content">
-              <a-avatar v-if="repairData.workerImage !== null" shape="square" :size="132" icon="user" :src="'http://127.0.0.1:9527/imagesWeb/' + repairData.workerImage.split(',')[0]" />
+              <a-avatar v-if="repairData.workerImage !== null" shape="square" :size="132" icon="user" :src="`${apiUrl("/imagesWeb/")}` + repairData.workerImage.split(',')[0]" />
               <a-avatar v-else shape="square" :size="132" icon="user" />
             </template>
             <a>{{ repairData.workerName !== null ? repairData.workerName : '- -' }}</a>
@@ -196,7 +196,7 @@ export default {
       if (images !== null && images !== '') {
         let imageList = []
         images.split(',').forEach((image, index) => {
-          imageList.push({uid: index, name: image, status: 'done', url: 'http://127.0.0.1:9527/imagesWeb/' + image})
+          imageList.push({uid: index, name: image, status: 'done', url: `${apiUrl("/imagesWeb/")}` + image})
         })
         this.fileList = imageList
       }

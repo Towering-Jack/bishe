@@ -115,7 +115,7 @@
         <a-upload
           v-if="faceView.visiable"
           name="avatar"
-          action="http://127.0.0.1:9527/cos/face/registered/"
+          :action="`${apiBase}/cos/face/registered/`"
           list-type="picture-card"
           :data="{ name: faceView.data.name, ownerId: faceView.data.id }"
           :file-list="fileList"

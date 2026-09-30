@@ -3,11 +3,14 @@ import {message, Modal, notification} from 'ant-design-vue'
 import moment from 'moment'
 import store from '../store'
 import db from 'utils/localstorage'
+import { API_REQUEST_BASE } from 'utils/runtime-config'
 moment.locale('zh-cn')
 
 // 统一配置
+// 接口前缀来自 static/app-config.js（运行时）或 APP_API_BASE（构建时），
+// 默认 '/api/'，由 nginx 反向代理到后端 9527。
 let FEBS_REQUEST = axios.create({
-  baseURL: 'http://127.0.0.1:9527/',
+  baseURL: API_REQUEST_BASE,
   responseType: 'json',
   validateStatus (status) {
     // 200 外的状态码都认定为失败
