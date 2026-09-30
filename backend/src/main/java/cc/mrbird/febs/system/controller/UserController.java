@@ -47,6 +47,18 @@ public class UserController extends BaseController {
         return this.userService.findByName(username);
     }
 
+    /**
+     * 按用户 ID 查询用户详情（推荐前端使用）。
+     *
+     * 原因同 /menu/user/{userId} 与 /index/user/{userId}：Tomcat 9 会以 400 拒绝
+     * URI 路径中的多字节 UTF-8 字符，用户名含中文时 user/{username} 必然失败。
+     * 路径为两段，不与上面的 /{username} 冲突。
+     */
+    @GetMapping("id/{userId}")
+    public User detailById(@NotBlank(message = "{required}") @PathVariable String userId) {
+        return this.userService.getById(userId);
+    }
+
     @GetMapping
     @RequiresPermissions("user:view")
     public Map<String, Object> userList(QueryRequest queryRequest, User user) {

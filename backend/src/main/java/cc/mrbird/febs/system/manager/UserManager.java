@@ -101,6 +101,24 @@ public class UserManager {
     }
 
     /**
+     * 通过用户 ID 构建 Vue 路由
+     *
+     * 存在的意义：Tomcat 9 会以 400 拒绝 URI **路径**中的多字节 UTF-8 字符，
+     * 因此 /menu/{username} 在用户名是中文时必然失败（前端表现为登录后弹「系统提示」）。
+     * 数字 ID 只含 ASCII，从根上避开这个问题，且 ID 不会变，比用户名更稳。
+     *
+     * @param userId 用户 ID
+     * @return 路由集合
+     */
+    public ArrayList<VueRouter<Menu>> getUserRoutersById(String userId) {
+        User user = this.userService.getById(userId);
+        if (user == null) {
+            return new ArrayList<>();
+        }
+        return getUserRouters(user.getUsername());
+    }
+
+    /**
      * 通过用户 ID获取前端系统个性化配置
      *
      * @param userId 用户 ID

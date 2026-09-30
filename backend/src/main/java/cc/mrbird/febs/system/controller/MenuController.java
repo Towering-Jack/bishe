@@ -40,6 +40,21 @@ public class MenuController extends BaseController {
         return this.userManager.getUserRouters(username);
     }
 
+    /**
+     * 按用户 ID 获取前端路由（推荐前端使用这个）。
+     *
+     * 原因：Tomcat 9 会以 400 拒绝 URI 路径中的多字节 UTF-8 字符，
+     * 所以用户名含中文时 GET /menu/{username} 一定失败。
+     * 数字 ID 只含 ASCII，可稳定工作。
+     *
+     * 路径用 /user/{userId} 两段，不会和上面的 /{username} 冲突。
+     */
+    @GetMapping("/user/{userId}")
+    public ArrayList<VueRouter<Menu>> getUserRoutersById(
+            @NotBlank(message = "{required}") @PathVariable String userId) {
+        return this.userManager.getUserRoutersById(userId);
+    }
+
     @GetMapping
     @RequiresPermissions("menu:view")
     public Map<String, Object> menuList(Menu menu) {

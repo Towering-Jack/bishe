@@ -88,6 +88,24 @@ public class LoginController {
 
     @GetMapping("index/{username}")
     public FebsResponse index(@NotBlank(message = "{required}") @PathVariable String username) {
+        return new FebsResponse().data(buildIndexData(username));
+    }
+
+    /**
+     * 按用户 ID 获取首页统计（推荐前端使用）。
+     *
+     * 原因同 /menu/user/{userId}：Tomcat 9 会以 400 拒绝 URI 路径中的多字节
+     * UTF-8 字符，用户名含中文时 index/{username} 必然失败。
+     * 路径用 index/user/{userId} 两段，不与上面的 index/{username} 冲突。
+     */
+    @GetMapping("index/user/{userId}")
+    public FebsResponse indexByUserId(@NotBlank(message = "{required}") @PathVariable String userId) {
+        User user = this.userService.getById(userId);
+        String username = user == null ? null : user.getUsername();
+        return new FebsResponse().data(buildIndexData(username));
+    }
+
+    private Map<String, Object> buildIndexData(String username) {
         Map<String, Object> data = new HashMap<>();
         // 获取系统访问记录
         Long totalVisitCount = loginLogMapper.findTotalVisitCount();
@@ -103,7 +121,7 @@ public class LoginController {
         param.setUsername(username);
         List<Map<String, Object>> lastSevenUserVisitCount = loginLogMapper.findLastSevenDaysVisitCount(param);
         data.put("lastSevenUserVisitCount", lastSevenUserVisitCount);
-        return new FebsResponse().data(data);
+        return data;
     }
 
     @RequiresPermissions("user:online")
