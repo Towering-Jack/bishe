@@ -87,7 +87,7 @@
         <a-col :span="8"><b>员工姓名：</b>
           <a-popover>
             <template slot="content">
-              <a-avatar v-if="repairData.workerImage !== null" shape="square" :size="132" icon="user" :src="`${apiUrl("/imagesWeb/")}` + repairData.workerImage.split(',')[0]" />
+              <a-avatar v-if="repairData.workerImage !== null" shape="square" :size="132" icon="user" :src="imagePrefix + repairData.workerImage.split(',')[0]" />
               <a-avatar v-else shape="square" :size="132" icon="user" />
             </template>
             <a>{{ repairData.workerName !== null ? repairData.workerName : '- -' }}</a>
@@ -196,7 +196,7 @@ export default {
       if (images !== null && images !== '') {
         let imageList = []
         images.split(',').forEach((image, index) => {
-          imageList.push({uid: index, name: image, status: 'done', url: `${apiUrl("/imagesWeb/")}` + image})
+          imageList.push({uid: index, name: image, status: 'done', url: imagePrefix + image})
         })
         this.fileList = imageList
       }

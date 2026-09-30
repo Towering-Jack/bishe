@@ -11,7 +11,7 @@
         <a-col :span="8"><b>业主姓名：</b>
           <a-popover>
             <template slot="content">
-              <a-avatar v-if="ownerData.images !== null" shape="square" :size="132" icon="user" :src="`${apiUrl("/imagesWeb/")}` + ownerData.images" />
+              <a-avatar v-if="ownerData.images !== null" shape="square" :size="132" icon="user" :src="imagePrefix + ownerData.images.split(',')[0]" />
               <a-avatar v-else shape="square" :size="132" icon="user" />
             </template>
             <a>{{ ownerData.name !== null ? ownerData.name : '- -' }}</a>
@@ -42,7 +42,7 @@
               style="height: 180px;object-fit: cover"
               slot="cover"
               alt="example"
-              :src="`${apiUrl("/imagesWeb/")}` + item.images.split(',')[0]"
+              :src="imagePrefix + item.images.split(',')[0]"
             />
             <a-card-meta :title="item.number + '室'" :description="item.address"></a-card-meta>
           </a-card>

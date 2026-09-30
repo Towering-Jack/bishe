@@ -210,7 +210,7 @@ export default {
                     size={132}
                     icon="user"
                     src={
-                      `${apiUrl("/imagesWeb/")}` +
+                      imagePrefix +
                       record.images.split(",")[0]
                     }
                   />
@@ -219,7 +219,7 @@ export default {
                   shape="square"
                   icon="user"
                   src={
-                    `${apiUrl("/imagesWeb/")}` +
+                    imagePrefix +
                     record.images.split(",")[0]
                   }
                 />

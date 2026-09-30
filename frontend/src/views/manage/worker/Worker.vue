@@ -154,9 +154,9 @@ export default {
           if (!record.image) return <a-avatar shape="square" icon="user" />
           return <a-popover>
             <template slot="content">
-              <a-avatar shape="square" size={132} icon="user" src={ `${apiUrl("/imagesWeb/")}` + record.image.split(',')[0] } />
+              <a-avatar shape="square" size={132} icon="user" src={ imagePrefix + record.image.split(',')[0] } />
             </template>
-            <a-avatar shape="square" icon="user" src={ `${apiUrl("/imagesWeb/")}` + record.image.split(',')[0] } />
+            <a-avatar shape="square" icon="user" src={ imagePrefix + record.image.split(',')[0] } />
           </a-popover>
         }
       }, {

@@ -50,7 +50,7 @@
         <a-col :span="8"><b>管理员：</b>
           <a-popover>
             <template slot="content">
-              <a-avatar v-if="housesData.workerImage !== null" shape="square" :size="132" icon="user" :src="`${apiUrl("/imagesWeb/")}` + housesData.workerImage.split(',')[0]" />
+              <a-avatar v-if="housesData.workerImage !== null" shape="square" :size="132" icon="user" :src="imagePrefix + housesData.workerImage.split(',')[0]" />
               <a-avatar v-else shape="square" :size="132" icon="user" />
             </template>
             <a>{{ housesData.workerName !== null ? housesData.workerName : '- -' }}</a>
@@ -223,7 +223,7 @@ export default {
       if (images !== null && images !== '') {
         let imageList = []
         images.split(',').forEach((image, index) => {
-          imageList.push({uid: index, name: image, status: 'done', url: `${apiUrl("/imagesWeb/")}` + image})
+          imageList.push({uid: index, name: image, status: 'done', url: imagePrefix + image})
         })
         this.fileList = imageList
       }

@@ -6,7 +6,7 @@ import store from './store'
 import request from 'utils/request'
 import db from 'utils/localstorage'
 import VueApexCharts from 'vue-apexcharts'
-import { API_BASE, IMAGE_BASE } from 'utils/runtime-config'
+import { API_BASE, IMAGE_PREFIX } from 'utils/runtime-config'
 
 import 'ant-design-vue/dist/antd.css'
 
@@ -20,21 +20,23 @@ Vue.use(VueApexCharts)
 Vue.component('apexchart', VueApexCharts)
 
 // 地址前缀：来自 static/app-config.js（运行时）或构建期环境变量。
-//   $apiBase   后端接口前缀，模板里写 :action="`${apiBase}/xxx`"
-//   $imageBase 图片前缀，一般不直接用，图片走 imageUrl()/apiUrl("/imagesWeb/")
+//   $apiBase     后端接口前缀，模板里写 :action="`${apiBase}/xxx`"
+//   $imagePrefix 图片前缀（以 /imagesWeb/ 结尾），模板里直接拼：
+//                :src="imagePrefix + item.images.split(',')[0]"
+//                刻意做成字符串而不是函数，这样模板里一个引号都不用写，
+//                避免在双引号 HTML 属性内部出现引号嵌套把属性提前截断。
 Vue.prototype.$apiBase = API_BASE
-Vue.prototype.$imageBase = IMAGE_BASE
+Vue.prototype.$imagePrefix = IMAGE_PREFIX
 
-// 用全局 mixin 把两个前缀变成组件上的计算属性，
-// 这样 <template> 里可以直接写 ${apiBase} / ${imageBase}，
+// 用全局 mixin 把它们变成组件上的计算属性，这样 <template> 里可以直接用，
 // 不依赖 Vue 对未定义标识符的内部回退行为（生产构建压缩后不可靠）。
 Vue.mixin({
   computed: {
     apiBase () {
       return this.$apiBase
     },
-    imageBase () {
-      return this.$imageBase
+    imagePrefix () {
+      return this.$imagePrefix
     }
   }
 })

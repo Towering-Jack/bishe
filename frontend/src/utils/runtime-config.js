@@ -85,7 +85,10 @@ export const API_REQUEST_BASE = API_BASE + '/'
 /**
  * 图片地址前缀，等于 imageBase + '/imagesWeb/'，例如
  *   '/propertyCosImg/imagesWeb/'
- * 起止都带 '/'，所以模板里可以直接  `${apiUrl("/imagesWeb/")}` + 文件名。
+ *
+ * 模板里直接拼即可：  :src="imagePrefix + item.images.split(',')[0]"
+ * 注意不要再套反引号模板字符串（`${...}`），因为在双引号 HTML 属性内部会产生
+ * 引号嵌套，把属性提前截断，导致 ${...} 以文本形式显示在页面上。
  */
 export const IMAGE_PREFIX = IMAGE_BASE + '/imagesWeb/'
 

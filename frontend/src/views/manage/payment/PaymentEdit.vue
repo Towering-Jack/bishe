@@ -128,7 +128,7 @@ export default {
       if (images !== null && images !== '') {
         let imageList = []
         images.split(',').forEach((image, index) => {
-          imageList.push({uid: index, name: image, status: 'done', url: `${apiUrl("/imagesWeb/")}` + image})
+          imageList.push({uid: index, name: image, status: 'done', url: imagePrefix + image})
         })
         this.fileList = imageList
       }

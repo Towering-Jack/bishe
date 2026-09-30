@@ -12,7 +12,7 @@
             style="height: 180px;object-fit: cover"
             slot="cover"
             alt="example"
-            :src="`${apiUrl("/imagesWeb/")}` + item.images.split(',')[0]"
+            :src="imagePrefix + item.images.split(',')[0]"
           />
           <template slot="actions" class="ant-card-actions">
             <a-icon v-if="item.repairStatus === null" key="setting" type="tool" @click="add(item)"/>

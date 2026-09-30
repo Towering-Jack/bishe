@@ -156,7 +156,11 @@ export default {
             this.$emit('success')
             // 如果修改用户就是当前登录用户的话，更新其state
             if (user.username === this.currentUser.username) {
-              this.$get(`user/${user.username}`).then((r) => {
+              // 用数字 userId：用户名可能是中文，进 URI 路径会被 Tomcat 以 400 拒绝
+              const api = (user.userId !== undefined && user.userId !== null && user.userId !== '')
+                ? `user/id/${user.userId}`
+                : `user/${encodeURIComponent(user.username)}`
+              this.$get(api).then((r) => {
                 this.setUser(r.data)
               })
             }

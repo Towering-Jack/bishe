@@ -364,7 +364,14 @@ export default {
   mounted () {
     this.homeData()
     this.welcomeMessage = this.welcome()
-    this.$get(`index/${this.user.username}`).then((r) => {
+    // 用数字 userId 请求首页统计。
+    // 用户名可能是中文，而 Tomcat 9 会以 400 拒绝 URI 路径中的多字节 UTF-8 字符。
+    // 兼容：老会话的 USER 缓存里可能没有 userId，此时退回按用户名请求。
+    const u = this.user || {}
+    const indexApi = (u.userId !== undefined && u.userId !== null && u.userId !== '')
+      ? `index/user/${u.userId}`
+      : `index/${encodeURIComponent(u.username)}`
+    this.$get(indexApi).then((r) => {
       let data = r.data.data
       this.todayIp = data.todayIp
       this.todayVisitCount = data.todayVisitCount

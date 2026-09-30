@@ -141,7 +141,11 @@ export default {
             this.loading = false
             this.$emit('success')
             // 更新其state
-            this.$get(`user/${user.username}`).then((r) => {
+            // 用数字 userId：用户名可能是中文，进 URI 路径会被 Tomcat 以 400 拒绝
+            const api = (user.userId !== undefined && user.userId !== null && user.userId !== '')
+              ? `user/id/${user.userId}`
+              : `user/${encodeURIComponent(user.username)}`
+            this.$get(api).then((r) => {
               this.setUser(r.data)
             })
           }).catch(() => {
