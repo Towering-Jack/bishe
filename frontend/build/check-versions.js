@@ -2,10 +2,17 @@
 const chalk = require('chalk')
 const semver = require('semver')
 const packageConfig = require('../package.json')
-const shell = require('shelljs')
 
-function exec (cmd) {
-  return require('child_process').execSync(cmd).toString().trim()
+// Resolve the running npm version without spawning a child process. npm exposes
+// it in the user agent it hands to lifecycle scripts, e.g.
+//   "npm/10.2.4 node/v20.11.0 win32 x64 workspaces/false"
+function detectNpmVersion () {
+  const ua = process.env.npm_config_user_agent
+  if (ua) {
+    const m = ua.match(/\bnpm\/([^\s]+)/)
+    if (m) return m[1]
+  }
+  return null
 }
 
 const versionRequirements = [
@@ -16,10 +23,11 @@ const versionRequirements = [
   }
 ]
 
-if (shell.which('npm')) {
+const npmVersion = detectNpmVersion()
+if (npmVersion) {
   versionRequirements.push({
     name: 'npm',
-    currentVersion: exec('npm --version'),
+    currentVersion: npmVersion,
     versionRequirement: packageConfig.engines.npm
   })
 }
@@ -40,12 +48,11 @@ module.exports = function () {
 
   if (warnings.length) {
     console.log('')
-    console.log(chalk.yellow('To use this template, you must update following to modules:'))
+    console.log(chalk.yellow('To use this project, you must update the following:'))
     console.log()
 
     for (let i = 0; i < warnings.length; i++) {
-      const warning = warnings[i]
-      console.log('  ' + warning)
+      console.log('  ' + warnings[i])
     }
 
     console.log()

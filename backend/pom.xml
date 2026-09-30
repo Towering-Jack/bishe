@@ -24,8 +24,114 @@
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <java.version>17</java.version>
-        <mybatis-plus.version>3.1.1</mybatis-plus.version>
+
+        <!-- 依赖版本统一在此管理，方便升级与审计 -->
+        <mybatis-plus.version>3.5.7</mybatis-plus.version>
+        <shiro.version>1.13.0</shiro.version>
+        <mysql.version>8.4.0</mysql.version>
+        <fastjson2.version>2.0.53</fastjson2.version>
+        <hutool.version>5.8.21</hutool.version>
+        <poi.version>5.4.1</poi.version>
+        <java-jwt.version>4.4.0</java-jwt.version>
+        <lombok.version>1.18.48</lombok.version>
+
+        <!--
+          Spring Boot 2.7.18 已停止维护（2023-11 OSS EOL），其传递依赖带有多个已公开漏洞。
+          这里通过属性覆盖把所有仍受 2.7.x 支持的组件拉到各自维护分支的最新安全版本。
+          仍无法在 2.7.x 内修复的项见 docs/dependency-audit.md 的“残留风险”一节。
+        -->
+        <spring-framework.version>5.3.39</spring-framework.version>
+        <tomcat.version>9.0.121</tomcat.version>
+        <snakeyaml.version>2.0</snakeyaml.version>
+        <logback.version>1.2.13</logback.version>
+        <jackson-bom.version>2.18.11</jackson-bom.version>
+        <netty.version>4.1.137.Final</netty.version>
+        <bouncycastle.version>1.85</bouncycastle.version>
+        <commons-io.version>2.20.0</commons-io.version>
+        <commons-lang3.version>3.18.0</commons-lang3.version>
+        <commons-beanutils.version>1.11.0</commons-beanutils.version>
+        <httpclient.version>4.5.14</httpclient.version>
+        <httpcore.version>4.4.16</httpcore.version>
+        <guava.version>33.5.0-jre</guava.version>
+        <okio.version>3.4.0</okio.version>
+        <mchange-commons.version>0.6.0</mchange-commons.version>
+        <json.version>20250517</json.version>
+        <xmlbeans.version>5.3.0</xmlbeans.version>
+        <xerces.version>2.12.2</xerces.version>
+        <log4j2.version>2.25.5</log4j2.version>
     </properties>
+
+    <!--
+      spring-boot-dependencies 并没有管理下面这些坐标，但它们是上游依赖带进来的
+      传递依赖（guava/commons-io 来自 Spring，xmlbeans/xerces/commons-beanutils/json
+      来自 baidu-java-sdk、alipay-sdk 与 ExcelKit）。放在 dependencyManagement 里
+      声明的版本会覆盖任何传递引入的版本，因此这是把有漏洞的传递依赖拉回安全版本的
+      唯一可靠位置。
+    -->
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>${commons-io.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>${guava.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.xmlbeans</groupId>
+                <artifactId>xmlbeans</artifactId>
+                <version>${xmlbeans.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>xerces</groupId>
+                <artifactId>xercesImpl</artifactId>
+                <version>${xerces.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-beanutils</groupId>
+                <artifactId>commons-beanutils</artifactId>
+                <version>${commons-beanutils.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.json</groupId>
+                <artifactId>json</artifactId>
+                <version>${json.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.squareup.okio</groupId>
+                <artifactId>okio</artifactId>
+                <version>${okio.version}</version>
+            </dependency>
+            <!--
+              alipay-sdk 会带进已停更且无法修复的 bcprov-jdk15on（该构件线停在 1.70，
+              仍有多个未修复公告）。bcprov-jdk18on 是它的后继构件，这里统一到
+              bcprov-jdk18on（由 minio 引入），并对 alipay-sdk 做排除。
+            -->
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcprov-jdk18on</artifactId>
+                <version>${bouncycastle.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.mchange</groupId>
+                <artifactId>mchange-commons-java</artifactId>
+                <version>${mchange-commons.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-test</artifactId>
+                <version>${spring-framework.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-api</artifactId>
+                <version>${log4j2.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <dependency>
@@ -48,7 +154,7 @@
         <dependency>
             <groupId>com.baomidou</groupId>
             <artifactId>dynamic-datasource-spring-boot-starter</artifactId>
-            <version>2.5.4</version>
+            <version>3.6.1</version>
         </dependency>
         <!-- mybatis-plus -->
         <dependency>
@@ -66,13 +172,13 @@
         <dependency>
             <groupId>org.freemarker</groupId>
             <artifactId>freemarker</artifactId>
-            <version>2.3.28</version>
+            <version>2.3.35</version>
         </dependency>
         <!-- sql 打印 -->
         <dependency>
             <groupId>p6spy</groupId>
             <artifactId>p6spy</artifactId>
-            <version>3.8.1</version>
+            <version>3.9.1</version>
         </dependency>
         <!-- commons -->
         <dependency>
@@ -82,13 +188,13 @@
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
-            <version>2.6</version>
+            <version>${commons-io.version}</version>
         </dependency>
         <!-- mysql -->
         <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
-            <version>8.0.33</version>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <version>${mysql.version}</version>
         </dependency>
         <!-- aop依赖 -->
         <dependency>
@@ -99,7 +205,7 @@
         <dependency>
             <groupId>org.apache.shiro</groupId>
             <artifactId>shiro-spring</artifactId>
-            <version>1.4.0</version>
+            <version>${shiro.version}</version>
         </dependency>
         <!-- spring cache -->
         <dependency>
@@ -125,12 +231,12 @@
         <dependency>
             <groupId>com.auth0</groupId>
             <artifactId>java-jwt</artifactId>
-            <version>3.4.1</version>
+            <version>${java-jwt.version}</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.18.34</version>
+            <version>${lombok.version}</version>
             <scope>provided</scope>
         </dependency>
         <!-- quartz -->
@@ -143,48 +249,105 @@
             <groupId>com.wuwenze</groupId>
             <artifactId>ExcelKit</artifactId>
             <version>2.0.7</version>
+            <exclusions>
+                <!-- ExcelKit 自带的是存在漏洞的 POI 3.17，改用下面显式声明的 ${poi.version} -->
+                <exclusion>
+                    <groupId>org.apache.poi</groupId>
+                    <artifactId>poi</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.poi</groupId>
+                    <artifactId>poi-ooxml</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.poi</groupId>
+                    <artifactId>poi-ooxml-schemas</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>xerces</groupId>
+                    <artifactId>xercesImpl</artifactId>
+                </exclusion>
+                <!--
+                  dom4j 只被 ExcelKit 的 XML 配置解析路径
+                  （com.wuwenze.poi.factory.ExcelMappingFactory#loadExcelMappingByXml）使用。
+                  本项目全部使用 @Excel / @ExcelField 注解配置，没有任何 excel-mapping
+                  XML，因此该路径不会被执行；而 dom4j:1.6.1 带有两个无修复版本的公告，
+                  这里直接排除。
+                -->
+                <exclusion>
+                    <groupId>dom4j</groupId>
+                    <artifactId>dom4j</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <!-- Apache POI（ExcelKit 的 Excel 读写实现），覆盖掉 3.17 的已知漏洞版本 -->
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi</artifactId>
+            <version>${poi.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+            <version>${poi.version}</version>
         </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>23.0</version>
+            <version>${guava.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
-            <version>4.5.2</version>
+            <version>${httpclient.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpcore</artifactId>
-            <version>4.4.5</version>
+            <version>${httpcore.version}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-test</artifactId>
-            <version>5.2.3.RELEASE</version>
         </dependency>
         <dependency>
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-all</artifactId>
-            <version>5.5.7</version>
+            <version>${hutool.version}</version>
         </dependency>
         <dependency>
             <groupId>com.alipay.sdk</groupId>
             <artifactId>alipay-sdk-java</artifactId>
-            <version>3.1.0</version>
+            <version>4.39.79.ALL</version>
+            <exclusions>
+                <!-- 由 minio 引入的 bcprov-jdk18on 统一提供 BouncyCastle 实现 -->
+                <exclusion>
+                    <groupId>org.bouncycastle</groupId>
+                    <artifactId>bcprov-jdk15on</artifactId>
+                </exclusion>
+                <!--
+                  alipay-sdk 的 dom4j 依赖只用于「XML 格式」的 OpenAPI 响应解析。
+                  本项目使用 AlipayTradePagePayRequest 且 format 固定为 json
+                  （见 common/utils/Alipay.java），不会走 XML 解析分支；而
+                  dom4j:1.6.1 带有两个无修复版本的公告，故排除。
+                -->
+                <exclusion>
+                    <groupId>dom4j</groupId>
+                    <artifactId>dom4j</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
-        <!-- fastjson -->
+        <!-- JSON：fastjson 1.x 已停止维护且存在大量反序列化漏洞，改用官方的 fastjson2 -->
         <dependency>
-            <groupId>com.alibaba</groupId>
-            <artifactId>fastjson</artifactId>
-            <version>1.2.48</version>
+            <groupId>com.alibaba.fastjson2</groupId>
+            <artifactId>fastjson2</artifactId>
+            <version>${fastjson2.version}</version>
         </dependency>
         <!-- baidu依赖SDK -->
         <dependency>
             <groupId>com.baidu.aip</groupId>
             <artifactId>java-sdk</artifactId>
-            <version>4.12.0</version>
+            <version>4.16.19</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
@@ -202,7 +365,7 @@
         <dependency>
             <groupId>io.minio</groupId>
             <artifactId>minio</artifactId>
-            <version>8.5.12</version>
+            <version>8.6.0</version>
         </dependency>
     </dependencies>
 
@@ -210,7 +373,7 @@
         <repository>
             <id>nexus-aliyun</id>
             <name>Nexus aliyun</name>
-            <url>http://maven.aliyun.com/nexus/content/groups/public</url>
+            <url>https://maven.aliyun.com/nexus/content/groups/public</url>
         </repository>
     </repositories>
 
@@ -237,6 +400,18 @@
                 <configuration>
                     <release>17</release>
                     <encoding>UTF-8</encoding>
+                    <!--
+                      JDK 23 起 javac 默认不再执行 classpath 上的注解处理器，Lombok 因此
+                      不会生成 getter/setter（表现为“找不到符号 getXxx”）。这里显式声明
+                      注解处理器路径，保证 Lombok 在 JDK 21/25 上都能正常工作。
+                    -->
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
                 </configuration>
             </plugin>
             <plugin>

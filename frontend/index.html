@@ -9,6 +9,11 @@
   <!-- SpreadJS -->
   <script charset="utf-8" src="./static/utils/spreadJS/gc.spread.sheets.all.11.0.0.min.js"></script>
   <script charset="utf-8" src="./static/utils/spreadJS/gc.spread.excelio.11.0.0.min.js"></script>
+  <!--
+    部署配置：必须在内置脚本之前加载。
+    上线后如需改后端地址，直接编辑 dist/static/app-config.js 即可，无需重新打包。
+  -->
+  <script charset="utf-8" src="./static/app-config.js"></script>
 </head>
 <body>
 <div id="febs">

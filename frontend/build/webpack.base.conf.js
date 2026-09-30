@@ -1,29 +1,20 @@
 'use strict'
 const path = require('path')
-const utils = require('./utils')
+const webpack = require('webpack')
+const { VueLoaderPlugin } = require('vue-loader')
 const config = require('../config')
 const vueLoaderConfig = require('./vue-loader.conf')
-const webpack = require('webpack');
 
 function resolve (dir) {
   return path.join(__dirname, '..', dir)
 }
 
-const createLintingRule = () => ({
-  test: /\.(js|vue)$/,
-  loader: 'eslint-loader',
-  enforce: 'pre',
-  include: [resolve('src'), resolve('test')],
-  options: {
-    formatter: require('eslint-friendly-formatter'),
-    emitWarning: !config.dev.showEslintErrorsInOverlay
-  }
-})
-
 module.exports = {
+  // webpack 5 requires an explicit mode; the dev/prod configs may override it.
+  mode: process.env.NODE_ENV === 'production' ? 'production' : 'development',
   context: path.resolve(__dirname, '../'),
   entry: {
-    app: ['babel-polyfill', './src/main.js']
+    app: './src/main.js'
   },
   output: {
     path: config.build.assetsRoot,
@@ -35,76 +26,79 @@ module.exports = {
   resolve: {
     extensions: ['.js', '.vue', '.json'],
     alias: {
-      'vue$': 'vue/dist/vue.esm.js',
+      vue$: 'vue/dist/vue.esm.js',
       '@': resolve('src'),
       '~': resolve('src/components'),
-      'utils': resolve('src/utils')
-
+      utils: resolve('src/utils')
+    },
+    fallback: {
+      // Client-side bundle: none of these Node core modules are needed. webpack 5
+      // no longer polyfills them automatically, so resolve them to `false`
+      // rather than pulling in the old `node: { fs: 'empty' }` shims.
+      fs: false,
+      net: false,
+      tls: false,
+      dgram: false,
+      child_process: false
     }
   },
   module: {
     rules: [
-      ...(config.dev.useEslint ? [createLintingRule()] : []),
       {
         test: /\.vue$/,
         loader: 'vue-loader',
         options: vueLoaderConfig
       },
       {
-        test: /\.js$/,
+        test: /\.m?js$/,
         loader: 'babel-loader',
-        include: [resolve('src'), resolve('test'), resolve('node_modules/webpack-dev-server/client')]
+        include: [resolve('src')]
       },
       {
         test: /\.(png|jpe?g|gif|svg)(\?.*)?$/,
-        loader: 'url-loader',
-        options: {
-          limit: 10000,
-          name: utils.assetsPath('img/[name].[hash:7].[ext]')
+        type: 'asset',
+        parser: {
+          dataUrlCondition: { maxSize: 10000 }
+        },
+        generator: {
+          filename: 'static/img/[name].[hash:7][ext][query]'
         }
       },
       {
         test: /\.(mp4|webm|ogg|mp3|wav|flac|aac)(\?.*)?$/,
-        loader: 'url-loader',
-        options: {
-          limit: 10000,
-          name: utils.assetsPath('media/[name].[hash:7].[ext]')
+        type: 'asset',
+        parser: {
+          dataUrlCondition: { maxSize: 10000 }
+        },
+        generator: {
+          filename: 'static/media/[name].[hash:7][ext][query]'
         }
       },
       {
         test: /\.(woff2?|eot|ttf|otf)(\?.*)?$/,
-        loader: 'url-loader',
-        options: {
-          limit: 10000,
-          name: utils.assetsPath('fonts/[name].[hash:7].[ext]')
+        type: 'asset',
+        parser: {
+          dataUrlCondition: { maxSize: 10000 }
+        },
+        generator: {
+          filename: 'static/fonts/[name].[hash:7][ext][query]'
         }
       }
     ]
   },
-  node: {
-    // prevent webpack from injecting useless setImmediate polyfill because Vue
-    // source contains it (although only uses it if it's native).
-    setImmediate: false,
-    // prevent webpack from injecting mocks to Node native modules
-    // that does not make sense for the client
-    dgram: 'empty',
-    fs: 'empty',
-    net: 'empty',
-    tls: 'empty',
-    child_process: 'empty'
-  },
   plugins: [
-    // Ignore all locale files of moment.js
-    new webpack.IgnorePlugin(/^\.\/locale$/, /moment$/),
-    new webpack.optimize.UglifyJsPlugin({
-      beautify: false,
-      comments: false,
-      compress: {
-        warnings: false,
-        drop_console: true,
-        collapse_vars: true,
-        reduce_vars: true,
-      }
-    }),
-  ]
+    new VueLoaderPlugin(),
+    // Ignore all locale files of moment.js; locales are loaded explicitly at runtime.
+    new webpack.IgnorePlugin({ resourceRegExp: /^\.\/locale$/, contextRegExp: /moment$/ }),
+    // src/utils/runtime-config.js 在运行时读取 window.__APP_CONFIG__.apiBase；
+    // 这里注入的构建期值是它的兜底（可用 APP_API_BASE 环境变量覆盖）。
+    new webpack.DefinePlugin({
+      APP_API_BASE: JSON.stringify(process.env.APP_API_BASE || '/api')
+    })
+  ],
+  // Suppress the noisy "module not found" hints for optional peer deps.
+  stats: {
+    modules: false,
+    children: false
+  }
 }

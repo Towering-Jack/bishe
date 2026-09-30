@@ -34,6 +34,8 @@ public class FaceRecognitionImpl implements FaceRecognition {
         // 使用本地模式
         Bopomofo4j.local();
         // 请求参数 Map
+        // 注意：AipFace.addUser 的 options 形参仍是 HashMap<String, String>，
+        // 只有 search / detect 在 4.16.x 改成了 Map<String, Object>。
         HashMap<String, String> options = new HashMap<>();
         // 用户自资料，长度限制256B
         options.put("user_info", name);
@@ -69,7 +71,7 @@ public class FaceRecognitionImpl implements FaceRecognition {
      */
     @Override
     public String verification(String img) {
-        HashMap<String, String> options = new HashMap<>();
+        HashMap<String, Object> options = new HashMap<>();
         // 最多处理人脸的数量，最大值10
         options.put("max_face_num", "1");
         // 匹配阈值 设置阈值后，score低于此阈值的用户信息将不会返回 最大100 最小0 默认80 此阈值设置得越高，检索速度将会越快
@@ -104,7 +106,7 @@ public class FaceRecognitionImpl implements FaceRecognition {
     @Override
     public String faceDetection(String img) {
         // 请求参数 Map
-        HashMap<String, String> options = new HashMap<>();
+        HashMap<String, Object> options = new HashMap<>();
         // 包括age,beauty,expression,face_shape,gender,glasses,landmark,landmark72，landmark150，race,quality,eye_status,emotion,face_type信息 逗号分隔. 默认只返回face_token、人脸框、概率和旋转角度
         options.put("face_field", "age,beauty,face_shape");
         // 最多处理人脸的数量，最大值10

@@ -3,11 +3,15 @@ package cc.mrbird.febs.common.utils;
 import cc.mrbird.febs.common.domain.FebsConstant;
 import cc.mrbird.febs.common.domain.QueryRequest;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.OrderItem;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.commons.lang3.StringUtils;
 
 /**
  * 处理排序工具类
+ *
+ * mybatis-plus 3.5.x 移除了 Page#setAsc / Page#setDesc，改用
+ * addOrder(OrderItem.asc(...) / OrderItem.desc(...))。
  */
 @SuppressWarnings("unchecked")
 public class SortUtil {
@@ -33,15 +37,15 @@ public class SortUtil {
                 && !StringUtils.equalsIgnoreCase(request.getSortField(), "undefined")
                 && !StringUtils.equalsIgnoreCase(request.getSortOrder(), "undefined")) {
             if (StringUtils.equals(request.getSortOrder(), FebsConstant.ORDER_DESC))
-                page.setDesc(sortField);
+                page.addOrder(OrderItem.desc(sortField));
             else
-                page.setAsc(sortField);
+                page.addOrder(OrderItem.asc(sortField));
         } else {
             if (StringUtils.isNotBlank(defaultSort)) {
                 if (StringUtils.equals(defaultOrder, FebsConstant.ORDER_DESC))
-                    page.setDesc(defaultSort);
+                    page.addOrder(OrderItem.desc(defaultSort));
                 else
-                    page.setAsc(defaultSort);
+                    page.addOrder(OrderItem.asc(defaultSort));
             }
         }
     }

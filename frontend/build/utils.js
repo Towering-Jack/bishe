@@ -1,8 +1,7 @@
 'use strict'
 const path = require('path')
 const config = require('../config')
-const ExtractTextPlugin = require('extract-text-webpack-plugin')
-const packageConfig = require('../package.json')
+const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 
 exports.assetsPath = function (_path) {
   const assetsSubDirectory = process.env.NODE_ENV === 'production'
@@ -18,7 +17,11 @@ exports.cssLoaders = function (options) {
   const cssLoader = {
     loader: 'css-loader',
     options: {
-      sourceMap: options.sourceMap
+      sourceMap: options.sourceMap,
+      // webpack 5 resolves url()/import itself.
+      url: false,
+      import: false,
+      modules: false
     }
   }
 
@@ -45,16 +48,16 @@ exports.cssLoaders = function (options) {
     // Extract CSS when that option is specified
     // (which is the case during production build)
     if (options.extract) {
-      return ExtractTextPlugin.extract({
-        use: loaders,
-        fallback: 'vue-style-loader'
-      })
+      // mini-css-extract-plugin replaces extract-text-webpack-plugin (webpack 3).
+      // Keep esModule at its default (true): vue-loader 15's generated style
+      // module expects a default export, so esModule:false makes every .vue
+      // style block warn "export 'default' was not found".
+      return [MiniCssExtractPlugin.loader].concat(loaders)
     } else {
       return ['vue-style-loader'].concat(loaders)
     }
   }
 
-  // https://vue-loader.vuejs.org/en/configurations/extract-css.html
   return {
     css: generateLoaders(),
     postcss: generateLoaders(),
@@ -80,22 +83,4 @@ exports.styleLoaders = function (options) {
   }
 
   return output
-}
-
-exports.createNotifierCallback = () => {
-  const notifier = require('node-notifier')
-
-  return (severity, errors) => {
-    if (severity !== 'error') return
-
-    const error = errors[0]
-    const filename = error.file && error.file.split('!').pop()
-
-    notifier.notify({
-      title: packageConfig.name,
-      message: severity + ': ' + error.name,
-      subtitle: filename || '',
-      icon: path.join(__dirname, 'logo.png')
-    })
-  }
 }
