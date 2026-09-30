@@ -2,6 +2,11 @@
 
 本文对应「前端打包成一个 html 文件夹，直接拖到云服务器」这种部署方式。
 
+> **本项目实际服务器：`property.qqiukulele.cn`**
+> 站点目录 `/www/wwwroot/property/distDL`，已有 nginx 配置使用
+> `/propertyCosApi/`（后端）与 `/propertyCosImg/imagesWeb/`（MinIO）。
+> 对应的前端配置已经设好，见第 2 节；服务器配置需要改的 3 处见第 8 节。
+
 ---
 
 ## 1. 要上传的东西
@@ -48,21 +53,39 @@ npm run build
 
 不改的话，浏览器会去请求**访问者自己的电脑**（`127.0.0.1`），必然全部失败。
 
-现在这些地址统一由 **`static/app-config.js`** 控制：
+现在这些地址统一由 **`static/app-config.js`** 控制。因为服务器上「后端接口」和
+「图片」是两个不同的 nginx location，所以有**两个**前缀：
 
 ```js
 window.__APP_CONFIG__ = {
-  apiBase: '/api'
+  apiBase: '/propertyCosApi',    // 后端接口，nginx 去前缀后转 127.0.0.1:9527
+  imageBase: '/propertyCosImg'   // 图片，nginx 转 MinIO 的 property-cos 桶
 }
 ```
 
+前端最终发出的地址：
+
+| 用途 | 实际请求 |
+| --- | --- |
+| 登录 | `/propertyCosApi/login` |
+| 任意接口 | `/propertyCosApi/<后端路径>` |
+| 上传 | `/propertyCosApi/file/fileUpload/` |
+| 人脸注册 | `/propertyCosApi/cos/face/registered/` |
+| 图片 | `/propertyCosImg/imagesWeb/<文件名>` |
+
 **这是运行时配置**：改完刷新浏览器即可生效，不需要重新构建。
+
+> `imageBase` 后面固定拼 `/imagesWeb/`，所以图片完整前缀就是
+> `/propertyCosImg/imagesWeb/` —— 与服务器上已有的 location 一致。
 
 ---
 
 ## 3. nginx 配置（推荐方案）
 
-配套文件：**`deploy/nginx-bishe.conf`**
+配套文件：**`deploy/nginx-bishe.conf`**（通用模板）
+
+> 如果你就用本仓库的实际服务器 `property.qqiukulele.cn`，
+> 请直接看 **第 8 节** 和 **`deploy/nginx-property.qqiukulele.cn.conf`**。
 
 ```bash
 sudo cp deploy/nginx-bishe.conf /etc/nginx/conf.d/bishe.conf
@@ -148,49 +171,130 @@ window.__APP_CONFIG__ = {
 
 ---
 
-## 7. 图片显示排查（重要，含一个既有隐患）
+## 7. 图片显示排查（含一个既有隐患）
 
-数据库里只存**文件名**，前端显示时拼 `/imagesWeb/` 前缀。但后端代码里
-**没有 `/imagesWeb/` 这个映射**（`MyWebMvcConfigurerAdapter` 只注册了 `/images/**`），
-所以这个前缀必须由 nginx（或你服务器上原有的配置）来提供 —— 见第 3 节的
-`location /imagesWeb/`。
+你的 nginx 已经把图片交给 MinIO：
 
-### 隐患：库里可能存的是完整 URL
-
-后端 `FileController#fileUpload` 返回的是**完整 MinIO 地址**：
-
-```java
-String fileUrl = minioProperties.getEndpoint() + "/" + minioProperties.getBucketName() + "/" + newFileName;
-// 例如 http://1.14.170.236:19000/property-cos/xxx.jpg
+```nginx
+location /propertyCosImg/imagesWeb/ {
+    proxy_pass http://1.14.170.236:19000/property-cos/;
+}
 ```
 
-而前端保存时直接把上传响应写进了库：`images.push(image.response)`。
-如果库里存的是这种完整 URL，那么渲染时拼出来会变成：
+前端请求 `/propertyCosImg/imagesWeb/<文件名>`，nginx 去掉
+`/propertyCosImg/imagesWeb/` 后转发到 `property-cos` 桶。**后端不参与图片读取**
+（后端 `MyWebMvcConfigurerAdapter` 只注册了 `/images/**`，与前端用的
+`/imagesWeb/` 不是同一个前缀，所以那条映射其实用不上）。
 
-```
-/api/imagesWeb/http://1.14.170.236:19000/property-cos/xxx.jpg    ← 坏地址
-```
+要让这条路走通，数据库里存的必须是**纯文件名**（如 `a1b2c3-uuid.jpg`）。
+前端也已经做了兼容：`imageUrl()` 会先去掉完整 URL 只取最后一段文件名，所以
+即使库里存的是 `http://1.14.170.236:19000/property-cos/a1b2c3.jpg` 也能正确显示成
+`/propertyCosImg/imagesWeb/a1b2c3.jpg`。
 
-这是项目里**既有的前后端约定不一致**（与本次依赖升级无关）。判断方法：
+### 确认方法
 
 ```sql
--- 看库里存的是文件名还是完整地址
-SELECT images FROM cos_building_info WHERE images IS NOT NULL LIMIT 5;
+SELECT id, images FROM cos_building_info WHERE images IS NOT NULL LIMIT 5;
 ```
 
-- 存的是 `xxx.jpg` 这种**纯文件名** → 现在的代码就正常，不用动
-- 存的是 `http://...` **完整地址** → 图片显示不出来，二选一修复：
-  - **改后端**（推荐）：`FileController` 只返回 `newFileName`，同时前端
-    `images.push(image.response)` 保持不动。注意历史上已存的完整地址需要
-    清洗数据库，或让前端兼容两种格式。
-  - **改前端**：把 27 处 `${apiUrl("/imagesWeb/")}` + 值 的写法收敛成一个
-    取文件名的辅助函数（`值.split('/').pop()`），这样两种历史数据都能显示。
+- `a1b2c3-uuid.jpg` —— 纯文件名，正常
+- `http://1.14.170.236:19000/property-cos/a1b2c3-uuid.jpg` —— 完整地址，前端已兼容
+- 如果同一列里两种都有，前端也都能处理
 
-  需要我做哪一种，告我一声即可。
+> 之所以会出现完整地址：后端 `FileController#fileUpload` 返回的是
+> `endpoint + '/' + bucket + '/' + 文件名`，而前端保存时把上传响应直接写进了库
+> （`images.push(image.response)`）。这是项目里**既有的前后端约定不一致**，
+> 与依赖升级无关。想让库里数据干净，可以把 `FileController` 改成只返回
+> `newFileName`（需要你重新打 jar）。
 
 ---
 
-## 8. 常见问题
+## 8. 你的服务器配置（`property.qqiukulele.cn`）需要改的 3 处
+
+你那份配置**整体是对的**，前缀也已经对上了。逐条核对结论：
+
+| 你的 location | 前端会请求的地址 | 结论 |
+| --- | --- | --- |
+| `/propertyCosApi/` | `/propertyCosApi/login` 等全部接口 | ✅ 正确 |
+| `/propertyCosApi/` | `/propertyCosApi/file/fileUpload/` 上传 | ✅ 正确 |
+| `/propertyCosApi/` | `/propertyCosApi/cos/face/registered/` 人脸 | ✅ 正确 |
+| `/propertyCosImg/imagesWeb/` | `/propertyCosImg/imagesWeb/<文件名>` | ✅ 正确 |
+
+> `proxy_pass http://127.0.0.1:9527/;` 结尾的 `/` 是关键，它会把
+> `/propertyCosApi/` 前缀去掉，所以后端收到的仍是 `/login`，**后端不用改**。
+
+对照参考文件：**`deploy/nginx-property.qqiukulele.cn.conf`**（不要整体覆盖，
+照着改你自己那份）。
+
+### 【改1】确认站点目录与产物位置
+
+你写的是 `root /www/wwwroot/property/distDL;`。
+把打好的 `dist` **里面的内容**放进这个目录，让它直接包含 `index.html` 和 `static/`：
+
+```
+/www/wwwroot/property/distDL/
+├── index.html
+└── static/
+```
+
+### 【改2】开启 gzip（否则构建出的 `.gz` 全白做）
+
+你现在**没有** `gzip` 相关指令，所以 `dist` 里那 57 个 `.gz` 文件永远不会被使用，
+浏览器拿到的是未压缩版本。加三行：
+
+```nginx
+gzip on;
+gzip_vary on;
+gzip_static on;     # 若 nginx 未编译 gzip_static 模块，nginx -t 会报错，去掉这行即可
+```
+
+顺带建议加 `client_max_body_size 100m;`，与你后端 100MB 的上传上限对齐
+（在 `location /propertyCosApi/` 里加也可以）。
+
+### 【改3】`.js/.css` 那条 location 的正则写错了，是死代码
+
+你现在写的是：
+
+```nginx
+location ~ .*\\.(js|css)?$        # ← 两个反斜杠，正则里表示「字面反斜杠」
+```
+
+这行**从未生效过**（所以也就一直没有缓存头）。正确写法：
+
+```nginx
+location ~* \.(js|css)$ {
+    expires 12h;
+    error_log /dev/null;
+    access_log /dev/null;
+}
+```
+
+同时建议补上这两条（顺序放在上面正则**之前**，`=` 精确匹配优先级最高）：
+
+```nginx
+# 部署配置绝不能缓存，否则改了地址刷新不生效
+location = /static/app-config.js {
+    add_header Cache-Control "no-store, no-cache, must-revalidate";
+    expires -1;
+}
+
+# 带内容哈希的产物可以长缓存
+location ~* ^/static/(js|css)/ {
+    expires 1y;
+    add_header Cache-Control "public, immutable";
+    access_log off;
+}
+```
+
+### 可以删掉的
+
+`location /propertyCosFile/` 现在前端不再使用（上传已统一走
+`/propertyCosApi/file/fileUpload/`）。留着不影响功能，想干净可以删。
+`location /propertyCosFace/` 同理，前端人脸注册走的是 `/propertyCosApi/cos/face/registered/`。
+
+---
+
+## 9. 常见问题
 
 **Q：`app-config.js` 改了没反应？**
 nginx 配置里已把它设为 `no-store`；如果还不行，检查是不是 CDN/浏览器强缓存，

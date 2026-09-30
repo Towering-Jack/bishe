@@ -1,4 +1,20 @@
-/* 部署配置：改 apiBase 即可切换后端地址，保存后 Ctrl+F5 生效。详见 docs/deploy.md */
+/**
+ * ============================================================================
+ *  部署配置 —— 改这个文件即可切换地址，保存后 Ctrl+F5 生效，无需重新打包
+ * ============================================================================
+ *  当前值对应服务器 property.qqiukulele.cn 的 nginx 配置：
+ *    /propertyCosApi/  -> 后端 127.0.0.1:9527
+ *    /propertyCosImg/  -> MinIO 1.14.170.236:19000/property-cos
+ *
+ *  两个前缀分开配置，因为服务器上它们是两个不同的 location。
+ *  详细说明与排查步骤见 docs/deploy.md
+ */
 window.__APP_CONFIG__ = {
-  apiBase: '/api'
+  // 后端接口前缀。前端最终请求 /propertyCosApi/xxx，
+  // nginx 去掉该前缀后转发给后端，所以后端不需要做任何适配。
+  apiBase: '/propertyCosApi',
+
+  // 图片前缀。前端最终请求 /propertyCosImg/imagesWeb/<文件名>，
+  // nginx 转到 MinIO 的 property-cos 桶。
+  imageBase: '/propertyCosImg'
 }

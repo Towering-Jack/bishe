@@ -6,7 +6,7 @@ import store from './store'
 import request from 'utils/request'
 import db from 'utils/localstorage'
 import VueApexCharts from 'vue-apexcharts'
-import { API_BASE } from 'utils/runtime-config'
+import { API_BASE, IMAGE_BASE } from 'utils/runtime-config'
 
 import 'ant-design-vue/dist/antd.css'
 
@@ -19,17 +19,22 @@ Vue.use(VueApexCharts)
 
 Vue.component('apexchart', VueApexCharts)
 
-// 接口前缀：来自 static/app-config.js（运行时）或 APP_API_BASE（构建时）。
-// 模板里用 :action="`${apiBase}/xxx`" 取它。
+// 地址前缀：来自 static/app-config.js（运行时）或构建期环境变量。
+//   $apiBase   后端接口前缀，模板里写 :action="`${apiBase}/xxx`"
+//   $imageBase 图片前缀，一般不直接用，图片走 imageUrl()/apiUrl("/imagesWeb/")
 Vue.prototype.$apiBase = API_BASE
+Vue.prototype.$imageBase = IMAGE_BASE
 
-// 用全局 mixin 把 apiBase 变成组件上的计算属性，
-// 这样 <template> 里可以直接写 ${apiBase}，不依赖 Vue 对未定义标识符的
-// 内部回退行为（生产构建压缩后不可靠）。
+// 用全局 mixin 把两个前缀变成组件上的计算属性，
+// 这样 <template> 里可以直接写 ${apiBase} / ${imageBase}，
+// 不依赖 Vue 对未定义标识符的内部回退行为（生产构建压缩后不可靠）。
 Vue.mixin({
   computed: {
     apiBase () {
       return this.$apiBase
+    },
+    imageBase () {
+      return this.$imageBase
     }
   }
 })

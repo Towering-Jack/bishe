@@ -90,10 +90,11 @@ module.exports = {
     new VueLoaderPlugin(),
     // Ignore all locale files of moment.js; locales are loaded explicitly at runtime.
     new webpack.IgnorePlugin({ resourceRegExp: /^\.\/locale$/, contextRegExp: /moment$/ }),
-    // src/utils/runtime-config.js 在运行时读取 window.__APP_CONFIG__.apiBase；
-    // 这里注入的构建期值是它的兜底（可用 APP_API_BASE 环境变量覆盖）。
+    // src/utils/runtime-config.js 在运行时读取 window.__APP_CONFIG__；
+    // 这里注入的构建期值是它的兜底（可用环境变量覆盖）。
     new webpack.DefinePlugin({
-      APP_API_BASE: JSON.stringify(process.env.APP_API_BASE || '/api')
+      APP_API_BASE: JSON.stringify(process.env.APP_API_BASE || '/api'),
+      APP_IMAGE_BASE: JSON.stringify(process.env.APP_IMAGE_BASE || '/propertyCosImg')
     })
   ],
   // Suppress the noisy "module not found" hints for optional peer deps.

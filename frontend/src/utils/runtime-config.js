@@ -1,27 +1,37 @@
 /**
- * 接口基址（apiBase）的唯一来源。
+ * 地址配置的唯一来源。
  *
- * 优先级：
- *   1. 运行时配置  static/app-config.js  →  window.__APP_CONFIG__.apiBase
- *   2. 构建时环境变量  APP_API_BASE      →  经 webpack DefinePlugin 注入
- *   3. 默认值 '/api'（同域，由 nginx 反向代理到后端 9527）
+ * 有两个前缀需要分别配置，因为服务器上它们由不同的 nginx location 提供：
  *
- * 之所以做成运行时读取，是为了「打完包再改地址」：dist 目录里的
- * static/app-config.js 是一个纯文本文件，部署到服务器后直接改它即可，
- * 不需要重新构建。
+ *   apiBase   —— 后端接口（Spring Boot 9527）的前缀
+ *                例：'/propertyCosApi'  nginx 去掉该前缀后转发给后端
+ *   imageBase —— 图片（MinIO 桶）的前缀
+ *                例：'/propertyCosImg'   前端再拼 '/imagesWeb/<文件名>'
+ *                    即最终为 /propertyCosImg/imagesWeb/xxx.jpg
  *
- * 归一化保证「有前缀」和「没前缀」两种调用方式都能得到正确的地址。
+ * 两者都可以「打完包再改」：dist 目录里的 static/app-config.js 是纯文本文件，
+ * 部署到服务器后直接改它，刷新浏览器即生效，不需要重新构建。
+ *
+ * 取值优先级：
+ *   apiBase   : __APP_CONFIG__.apiBase   > 构建期 APP_API_BASE   > '/api'
+ *   imageBase : __APP_CONFIG__.imageBase > 构建期 APP_IMAGE_BASE > '/propertyCosImg'
+ *
+ * 归一化保证前缀带不带首尾斜杠都能得到正确结果。
  */
 
-const FALLBACK = typeof APP_API_BASE === 'undefined' ? '/api' : APP_API_BASE
+/* eslint-disable no-undef */
+const API_FALLBACK = typeof APP_API_BASE === 'undefined' ? '/api' : APP_API_BASE
+const IMAGE_FALLBACK = typeof APP_IMAGE_BASE === 'undefined' ? '/propertyCosImg' : APP_IMAGE_BASE
+/* eslint-enable no-undef */
 
-/** 读取运行时配置，兼容 IPv6 主机名与末尾多余的斜杠。 */
-function resolveBase () {
-  const runtime = (typeof window !== 'undefined' && window.__APP_CONFIG__) || {}
-  let base = runtime.apiBase
-
+/**
+ * 归一化一个前缀。
+ * '' 或 '/' 表示「同域根路径」，返回空串，拼接时得到 '/xxx'。
+ */
+function normalize (value, fallback) {
+  let base = value
   if (typeof base !== 'string' || base.trim() === '') {
-    base = FALLBACK
+    base = fallback
   }
   base = String(base || '').trim()
 
@@ -31,19 +41,26 @@ function resolveBase () {
   if (/^https?:\/\//i.test(base)) {
     return base.replace(/\/+$/, '')
   }
-  // 站内相对路径，如 '/api'
+  // 站内相对路径，如 '/propertyCosApi'
   return '/' + base.replace(/^\/+|\/+$/g, '')
 }
 
-export const API_BASE = resolveBase()
+/** 安全地读取运行时配置（SSR / 单测环境下 window 可能不存在）。 */
+function runtimeConfig () {
+  return (typeof window !== 'undefined' && window.__APP_CONFIG__) || {}
+}
+
+export const API_BASE = normalize(runtimeConfig().apiBase, API_FALLBACK)
+export const IMAGE_BASE = normalize(runtimeConfig().imageBase, IMAGE_FALLBACK)
 
 /**
- * 把后端路径拼成可访问的完整地址。
+ * 拼接一个后端路径。
  *
- *   apiUrl('/login')                  -> '/api/login' 或 'http://host:9527/login'
- *   apiUrl('imagesWeb/a.jpg')         -> '/api/imagesWeb/a.jpg'
- *   apiUrl('http://other/x.jpg')      -> 原样返回，便于兼容库里已存的绝对地址
- *   apiUrl(undefined)                 -> ''
+ *   apiUrl('/login')             -> '/propertyCosApi/login'
+ *   apiUrl('/imagesWeb/a.jpg')   -> '/propertyCosImg/imagesWeb/a.jpg'
+ *        （图片前缀和接口前缀不同，服务器上是两个 location，这里自动分流）
+ *   apiUrl('http://x/y')         -> 原样返回（已是绝对地址）
+ *   apiUrl(undefined)            -> ''
  */
 export function apiUrl (path) {
   if (path === undefined || path === null || path === '') {
@@ -53,30 +70,38 @@ export function apiUrl (path) {
   if (/^(https?:)?\/\//i.test(p) || p.startsWith('data:') || p.startsWith('blob:')) {
     return p
   }
-  return API_BASE + '/' + p.replace(/^\/+/, '')
+  const trimmed = p.replace(/^\/+/, '')
+  // 图片走 imageBase，其余走 apiBase
+  const base = /^imagesWeb\//i.test(trimmed) ? IMAGE_BASE : API_BASE
+  return base + '/' + trimmed
 }
 
 /**
- * 接口请求用的基址。默认走同域 /api，由 nginx 反向代理到后端 9527。
- * 保持以 '/' 结尾，以兼容 axios 的 baseURL 相对路径拼接规则。
+ * 接口请求用的基址（axios baseURL）。
+ * 保持以 '/' 结尾，以兼容 axios 对相对路径的拼接规则。
  */
 export const API_REQUEST_BASE = API_BASE + '/'
 
 /**
+ * 图片地址前缀，等于 imageBase + '/imagesWeb/'，例如
+ *   '/propertyCosImg/imagesWeb/'
+ * 起止都带 '/'，所以模板里可以直接  `${apiUrl("/imagesWeb/")}` + 文件名。
+ */
+export const IMAGE_PREFIX = IMAGE_BASE + '/imagesWeb/'
+
+/**
  * 把「数据库里存的图片引用」拼成可访问的地址。
  *
- * 之所以单独一个函数，是因为历史数据有两种格式，而页面渲染逻辑是
- *   apiUrl('/imagesWeb/') + stored
- * 直接拼字符串，一旦 stored 本身就是完整 URL 就会拼坏：
- *   /api/imagesWeb/http://1.14.170.236:19000/property-cos/a.jpg   ← 坏地址
+ *   imageUrl('a.jpg')                                  -> '/propertyCosImg/imagesWeb/a.jpg'
+ *   imageUrl('http://1.14.170.236:19000/property-cos/a.jpg')
+ *                                                      -> '/propertyCosImg/imagesWeb/a.jpg'
  *
- * 后端 FileController#fileUpload 返回的是完整 MinIO 地址
- *   endpoint + '/' + bucket + '/' + fileName
- * 而前端保存时直接把上传响应写进了数据库（images.push(image.response)），
- * 所以库里既可能是完整 URL，也可能是纯文件名（早期数据）。
- *
- * 这里统一处理：完整 URL 先取出最后一段文件名，再交给 apiUrl 拼前缀，
- * 这样两种历史数据都能正常显示，服务器端只需要一处 /imagesWeb/ 映射。
+ * 之所以要处理第二种，是因为后端 FileController#fileUpload 返回的是**完整 MinIO
+ * 地址**，而前端保存时把这个响应直接写进了数据库（images.push(image.response)），
+ * 所以库里既可能是纯文件名（早期数据），也可能是完整 URL。
+ * 直接拼前缀会把完整 URL 拼坏：
+ *   /propertyCosImg/imagesWeb/http://1.14.170.236:19000/property-cos/a.jpg  ← 坏地址
+ * 这里统一先取出最后一段文件名再拼，两种历史数据都能正常显示。
  */
 export function imageUrl (stored) {
   if (stored === undefined || stored === null || stored === '') {
@@ -86,10 +111,10 @@ export function imageUrl (stored) {
   if (s.startsWith('data:') || s.startsWith('blob:')) {
     return s
   }
-  // 去掉 query/hash 后再取最后一段，兼容 MinIO 带签名的 URL
+  // 去掉 query/hash 后取最后一段，兼容 MinIO 带签名的 URL
   const withoutQuery = s.split(/[?#]/)[0]
   const fileName = withoutQuery.split('/').filter(Boolean).pop() || ''
-  return apiUrl('imagesWeb/' + fileName)
+  return IMAGE_PREFIX + fileName
 }
 
 export default API_BASE
