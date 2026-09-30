@@ -42,8 +42,18 @@ router.beforeEach((to, from, next) => {
   if (token.length && user) {
     if (!asyncRouter) {
       if (!userRouter) {
-        request.get(`menu/${user.username}`).then((res) => {
-          console.log(res.data);
+        // 用数字 userId 而不是用户名去取菜单。
+        // 原因：用户名可能是中文，而 Tomcat 9 会以 400 拒绝 URI 路径中的
+        // 多字节 UTF-8 字符，导致登录成功后菜单请求失败（前端弹「系统提示」）。
+        // 数字 ID 只含 ASCII，可稳定工作。
+        // 兼容：老会话的 USER 缓存里可能没有 userId，此时退回按用户名请求。
+        let menuApi
+        if (user.userId !== undefined && user.userId !== null && user.userId !== '') {
+          menuApi = `menu/user/${user.userId}`
+        } else {
+          menuApi = `menu/${encodeURIComponent(user.username)}`
+        }
+        request.get(menuApi).then((res) => {
           asyncRouter = res.data
           save('USER_ROUTER', asyncRouter)
           go(to, next)
